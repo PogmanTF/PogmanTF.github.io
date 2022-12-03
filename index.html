@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Letterdle</title>
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@900&display=swap" rel="stylesheet">
+        <script src="/letters/index.min.js"></script>
+        <style>
+            body {
+                font-family: 'Nunito Sans', sans-serif;
+                font-size: 32px;
+                background-color: #718096;
+            }
+
+            #letter {
+                min-width: 3rem;
+                min-height: 2.7rem;
+                justify-content: center;
+                color: #40C0E7;
+                border: 1px solid aqua;
+            }
+
+            canvas {
+                width: 100%;
+                height: 100%;
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: -9999;
+            }
+
+             /* Popover styling */
+
+            a {
+                text-decoration: none;
+            }
+
+            .popover__title {
+                font-size: 24px;
+                line-height: 36px;
+                text-decoration: none;
+                color: rgb(228, 68, 68);
+                text-align: center;
+                padding: 15px 0;
+            }
+
+            .popover__wrapper {
+                position: relative;
+                /*margin-top: 1.5rem;*/
+                display: inline-block;
+            }
+            .popover__content {
+                opacity: 0;
+                visibility: hidden;
+                position: absolute;
+                left: -150px;
+                transform: translate(0, 10px);
+                background-color: #bfbfbf;
+                padding: 1.5rem;
+                box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+                width: auto;
+            }
+            .popover__content:before {
+                position: absolute;
+                z-index: -1;
+                content: "";
+                right: calc(50% - 10px);
+                top: -8px;
+                border-style: solid;
+                border-width: 0 10px 10px 10px;
+                border-color: transparent transparent #bfbfbf transparent;
+                transition-duration: 0.3s;
+                transition-property: transform;
+            }
+            .popover__wrapper:hover .popover__content {
+                z-index: 10;
+                opacity: 1;
+                visibility: visible;
+                transform: translate(0, -20px);
+                transition: all 0.5s cubic-bezier(0.75, -0.02, 0.2, 0.97);
+            }
+            .popover__message {
+                text-align: center;
+            }
+
+        </style>
+    </head>
+    <body class="antialiased h-full" style="">
+    <canvas id="my-canvas" style="width:100%; height:90%; z-index: -1;"></canvas>
+    <div style="display: flex; justify-content: space-between;">
+    <div style="display:flex; width:100%; justify-content:start;"><div>Letterdle - the game<sup>*</sup></div></div>
+    </div>
+        <div class="h-full" style="display: flex; width: 100%; margin-top: 10%; justify-content: center;">
+
+            <div id="left" style="margin-right: 10px; width: 100%; display: flex;  justify-content: end; text-transform: uppercase;"></div>
+                <div style="display: flex;" id="letter">Type a letter and hit Enter!</div>
+                <div id="right" style="margin-left: 10px; width: 100%; text-transform: uppercase;"></div>
+        </div>
+        <div style="position: absolute; bottom: 0px; right: 20px; font-size: 0.8rem">* not really</div>
+
+    <script>
+        let letterdle = {
+            letter: "",
+            guessesPerSide: 4,
+            alphabet: ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"],
+            guessedLetter: "",
+            guessedLetters: [],
+            left: [],
+            right: [],
+            won: false,
+            lost: false,
+            new_letter_input: "#letter",
+            init: function() {
+
+                this.pickNewGuess();
+
+                // this.displayText("#left", "Letters to the left");
+                // this.displayText("#right", "Letters to the right");
+
+                document.addEventListener("keyup", (event)=> {
+                    if(this.hasWon() || this.hasLost()){
+                        return false;
+                    }
+
+                    if (this.validGuess(event.key)) {
+                        this.guessedLetter = event.key;
+                        this.displayGuessLetter(this.guessedLetter.toUpperCase());
+                    } else if (event.key == "Enter") {
+                        if (this.validGuess(this.guessedLetter)) {
+                            this.submitGuess(this.guessedLetter);
+                        }
+                    }
+                });
+            },
+
+            pickNewGuess: function() {
+                this.letter =  this.alphabet[Math.floor(Math.random()*this.alphabet.length)];
+            },
+
+            submitGuess: function(new_letter) {
+
+
+                if (new_letter > this.letter) {
+                    this.addToSide("#right", this.right, new_letter);
+                } else if (new_letter < this.letter) {
+                    this.addToSide("#left", this.left, new_letter);
+                } else {
+                    this.winScene();
+                }
+
+                if (this.left.length > this.guessesPerSide || this.right.length > this.guessesPerSide) {
+                    this.revealLetter();
+                    this.loseScene();
+                }
+            },
+
+            loseScene: function () {
+                this.lost = true;
+                var loseIcon = "/letters/skull.svg";
+                allGuesses = this.createGuessedOptions();
+                let viewportHeight = window.innerHeight;
+                let viewportWidth = window.innerWidth;
+                var confettiSettings =
+                    {"target":"my-canvas","max":"200","size":"1","animate":true,
+                        "props":[
+                            {"type":"svg","src": loseIcon ,"size":50,"weight":0.6},
+                            ...allGuesses],
+                        "colors":[[165,104,246],[230,61,135],[0,199,228],[253,214,126]],"clock":"25","rotate":true,"width":viewportWidth,"height":viewportHeight,"start_from_edge":false,"respawn":true};
+                var confetti = new ConfettiGenerator(confettiSettings);
+                confetti.render();
+            },
+
+            revealLetter: function() {
+                this.displayGuessLetter(this.letter.toUpperCase(), "red");
+            },
+
+            displayText: function(element, text) {
+                document.querySelector(element).innerHTML = text;
+            },
+
+            addToSide: function(element, letters, newLetter) {
+                this.guessedLetters.push(newLetter);
+                letters.push(newLetter);
+                letters.sort();
+                this.addToGuess(element, letters.join(" "));
+                this.removeLetter();
+            },
+
+            validGuess: function(guess) {
+                return !this.guessedLetters.includes(guess) && guess.length == 1 && guess.match(/[a-z]/i);
+            },
+
+            displayGuessLetter: function (guessLetter, color = null) {
+                if (color) {
+                    document.querySelector(this.new_letter_input).style.color = color;
+                }
+                document.querySelector(this.new_letter_input).innerHTML = guessLetter;
+            },
+
+            removeLetter: function() {
+              document.querySelector("#letter").innerHTML = "";
+              this.guessedLetter = '';
+            },
+
+            getLetter: function() {
+                return document.querySelector(this.new_letter_input).value;
+            },
+            addToGuess: function(section, letter) {
+                document.querySelector(section).innerText = letter;
+            },
+
+            createGuessedOptions: function() {
+                return this.guessedLetters.map((guessedLetter) => {
+                    return {"type":"svg", "src": "/letters/" + guessedLetter.toLowerCase() + ".svg", "weight":0.2};
+                })
+            },
+
+            hasLost: function() {
+                return this.lost;
+            },
+
+            hasWon: function() {
+                return this.won;
+            },
+            winScene : function() {
+                this.won = true;
+                var letter = "/letters/" + this.letter + ".svg";
+                allGuesses = this.createGuessedOptions();
+                let viewportHeight = window.innerHeight;
+                let viewportWidth = window.innerWidth;
+                var confettiSettings =
+                    {"target":"my-canvas","max":"300","size":"1","animate":true,
+                        "props":[
+                            "circle",
+                            "square",
+                            "triangle",
+                            "line",
+                        {"type":"svg","src": letter ,"size":50,"weight":0.6},
+                            ...allGuesses],
+                        "colors":[[165,104,246],[230,61,135],[0,199,228],[253,214,126]],"clock":"25","rotate":true,"width":viewportWidth,"height":viewportHeight,"start_from_edge":false,"respawn":true};
+                var confetti = new ConfettiGenerator(confettiSettings);
+                 confetti.render();
+            }
+        }
+
+        letterdle.init();
+    </script>
+    </body>
+</html>

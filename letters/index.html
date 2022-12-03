@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="index.min.js"></script>
+    <style>
+        :root {
+            --svgcolor: tomato;
+        }
+    </style>
+    <title>Document</title>
+</head>
+<body>
+<canvas id="my-canvas" style="width:100%; height:90%;"></canvas>
+<div style="position:absolute; top: 500px; left: 600px;"> yolo lol! </div>
+<script>
+    var confettiSettings =
+        {"target":"my-canvas","max":"500","size":"1","animate":true,
+            "props":[
+                 "circle",
+                 "square",
+                 "triangle",
+                 "line",
+                {"type":"svg","src":"a.svg","size":50,"weight":0.6},
+                {"type":"svg","src":"x.svg","size":15,"weight":0.2},
+                {"type":"svg","src":"g.svg","size":15,"weight":0.2},
+                {"type":"svg","src":"n.svg","size":15,"weight":0.2},
+                {"type":"svg","src":"m.svg","size":15,"weight":0.2},
+                {"type":"svg","src":"p.svg","size":15,"weight":0.2},
+                {"type":"svg","src":"b.svg","size":15,"weight":0.2}],
+            "colors":[[165,104,246],[230,61,135],[0,199,228],[253,214,126]],"clock":"25","rotate":true,"width":"2560","height":"1350","start_from_edge":false,"respawn":true};
+    var confetti = new ConfettiGenerator(confettiSettings);
+    confetti.render();
+</script>
+</body>
+</html>
